@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Team Daily Check-In</title>
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f1;
+    --border-tertiary: rgba(0,0,0,0.12);
+    --border-info: #185fa5;
+    --text-primary: #1a1a1a;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --bg-success: #eaf3de;
+    --text-success: #27500a;
+    --bg-danger: #fcebeb;
+    --text-danger: #791f1f;
+    --bg-info: #e6f1fb;
+    --text-info: #0c447c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-secondary);
+    margin: 0; padding: 0;
+    color: var(--text-primary);
+  }
+  .page { max-width: 520px; margin: 0 auto; padding: 2rem 1rem; }
+  .card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-tertiary);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 4px 10px; border-radius: 8px; font-weight: 500;
+  }
+  .badge-ok  { background: var(--bg-success); color: var(--text-success); }
+  .badge-err { background: var(--bg-danger);  color: var(--text-danger);  }
+  .badge-info{ background: var(--bg-info);    color: var(--text-info);    }
+  .field { margin-bottom: 1.25rem; }
+  .field label {
+    display: block; font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 6px; font-weight: 500;
+  }
+  .field input, .field select {
+    width: 100%; padding: 8px 10px; font-size: 14px;
+    border: 1px solid var(--border-tertiary); border-radius: 8px;
+    background: var(--bg-primary); color: var(--text-primary);
+  }
+  .field input[readonly] { background: var(--bg-secondary); color: var(--text-secondary); }
+  .net-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;
+    padding: 10px 14px; background: var(--bg-secondary);
+    border-radius: 8px; border: 1px solid var(--border-tertiary);
+  }
+  .net-label { font-size: 13px; color: var(--text-secondary); flex: 1; }
+  .net-value { font-size: 13px; font-weight: 500; }
+  .warning-box {
+    border: 1px solid #e9b3b3; background: var(--bg-danger);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 1.25rem;
+  }
+  .warning-box p { margin: 0; font-size: 14px; color: var(--text-danger); line-height: 1.5; }
+  .success-box {
+    border: 1px solid #b7d79a; background: var(--bg-success);
+    border-radius: 8px; padding: 20px 16px; text-align: center; display: none;
+  }
+  .success-box h3 { margin: 0 0 6px; color: var(--text-success); font-size: 16px; }
+  .success-box p  { margin: 0; font-size: 13px; color: var(--text-success); }
+  .submit-btn {
+    width: 100%; padding: 11px; font-size: 15px; cursor: pointer;
+    background: var(--bg-info); color: var(--text-info);
+    border: 1px solid var(--border-info); border-radius: 8px; font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .divider { border: none; border-top: 1px solid var(--border-tertiary); margin: 1.25rem 0; }
+  #detection-note { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="card">
+
+    <!-- Header -->
+    <div style="margin-bottom:1.25rem;">
+      <p style="margin:0; font-weight:600; font-size:16px;">Team Daily Check-In</p>
+      <p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">Infinity Support — submit your daily update</p>
+    </div>
+
+    <!-- Network status -->
+    <div class="net-row">
+      <span class="net-label">Network</span>
+      <span class="net-value" id="net-ssid-display">Detecting…</span>
+      <span class="badge badge-info" id="net-badge" style="display:none;"></span>
+    </div>
+    <p id="detection-note"></p>
+
+    <!-- Access blocked warning -->
+    <div id="warning-area" style="display:none;" class="warning-box">
+      <p><strong>Access restricted.</strong> This check-in can only be submitted from the
+      <strong>Infinity Support</strong> WiFi network. Please connect and try again.</p>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Form -->
+    <div id="form-area">
+      <div class="field">
+        <label>Full Name *</label>
+        <select id="name-field" required onchange="syncEmail()">
+          <option value="">— Choose your name —</option>
+          <option data-email="acharya865jiwan@gmail.com">Jiwan Acharya</option>
+  </select>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="email-display" readonly placeholder="Auto-filled after selecting name" />
+      </div>
+      <button class="submit-btn" id="submit-btn" disabled onclick="submitForm()">
+        Submit check-in
+      </button>
+      <p id="submit-note" style="font-size:12px; color:var(--text-tertiary); margin-top:8px; text-align:center;"></p>
+    </div>
+
+    <!-- Success -->
+    <div id="success-area" class="success-box">
+      <h3>✓ Check-in recorded!</h3>
+      <p id="success-detail"></p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ====== CONFIG ======
+  const ALLOWED_WAN_IP  = "202.51.80.177";
+  const SCRIPT_URL      = "https://script.google.com/macros/s/AKfycbyjC0jUUP4a4M7bwHh4HM3RM0iAMWRpEnuX-0Bg2b--Sehpwb4A92WAsdvYnIi6kRVmBQ/exec";
+  // =====================
+
+  let detectedIP    = "";
+  let accessAllowed = false;
+
+  function syncEmail() {
+    const sel   = document.getElementById("name-field");
+    const opt   = sel.options[sel.selectedIndex];
+    const email = opt.getAttribute("data-email") || "";
+    document.getElementById("email-display").value = email;
+  }
+
+  async function detectNetwork() {
+    const ssidDisplay = document.getElementById("net-ssid-display");
+    const badge       = document.getElementById("net-badge");
+    const warning     = document.getElementById("warning-area");
+    const submitBtn   = document.getElementById("submit-btn");
+    const note        = document.getElementById("detection-note");
+
+    ssidDisplay.textContent = "Checking…";
+    badge.style.display = "none";
+    note.textContent    = "";
+
+    try {
+      const res  = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      detectedIP = data.ip || "Unknown";
+    } catch (e) {
+      detectedIP = "Unavailable";
+    }
+
+    const onOffice = detectedIP === ALLOWED_WAN_IP;
+
+    if (onOffice) {
+      ssidDisplay.textContent  = "Infinity Support";
+      badge.textContent        = "✓ Authorized";
+      badge.className          = "badge badge-ok";
+      badge.style.display      = "inline-flex";
+      warning.style.display    = "none";
+      submitBtn.disabled       = false;
+      accessAllowed            = true;
+      note.textContent         = "WAN IP: " + detectedIP + " — verified.";
+    } else {
+      ssidDisplay.textContent  = "Unknown / external";
+      badge.textContent        = "Not authorized";
+      badge.className          = "badge badge-err";
+      badge.style.display      = "inline-flex";
+      warning.style.display    = "block";
+      submitBtn.disabled       = true;
+      accessAllowed            = false;
+      note.textContent         = "WAN IP: " + detectedIP + " — not allowed.";
+    }
+  }
+
+  async function submitForm() {
+    if (!accessAllowed) return;
+
+    const name  = document.getElementById("name-field").value;
+    const email = document.getElementById("email-display").value;
+
+    if (!name || !email) {
+      alert("Please select your name.");
+      return;
+    }
+
+    const btn  = document.getElementById("submit-btn");
+    const note = document.getElementById("submit-note");
+    btn.disabled    = true;
+    note.textContent = "Submitting…";
+
+    const payload = { name: name, email: email, ip: detectedIP };
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode:   "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body:   JSON.stringify(payload)
+      });
+
+      // no-cors means we can't read the response, but if no error was thrown it went through
+      document.getElementById("form-area").style.display   = "none";
+      document.getElementById("success-area").style.display = "block";
+      document.getElementById("success-detail").textContent =
+        name + " (" + email + ") — logged at " + new Date().toLocaleTimeString("en-NP", {timeZone: "Asia/Kathmandu"});
+
+    } catch (err) {
+      btn.disabled     = false;
+      note.textContent = "Submission failed. Please try again.";
+    }
+  }
+
+  detectNetwork();
+</script>
+</body>
+</html>
